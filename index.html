@@ -19,26 +19,13 @@
     .container { max-width: 750px; margin: auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
     h2 { text-align: center; color: #1a237e; margin: 0 0 16px; font-size: 20px; }
     .filter { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filter select {
-      flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc;
-      font-size: 15px; background: #fff; cursor: pointer; min-width: 120px;
-    }
-
-    #areaAbsensi {
-      border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px;
-      background: #fafafa; min-height: 120px; overflow-x: auto;
-    }
+    .filter select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; background: #fff; cursor: pointer; min-width: 120px; }
+    #areaAbsensi { border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; background: #fafafa; min-height: 120px; overflow-x: auto; }
     #areaAbsensi h3 { margin: 0 0 6px; text-align: center; color: #1a237e; font-size: 16px; }
     #areaAbsensi p.sub { text-align: center; margin: 0 0 12px; color: #666; font-size: 13px; }
-
-    .badge {
-      display: inline-block; font-size: 10px; padding: 2px 6px;
-      border-radius: 4px; font-weight: bold; margin-right: 4px;
-      vertical-align: middle;
-    }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 4px; vertical-align: middle; }
     .badge.desa { background: #e8eaf6; color: #1a237e; }
     .badge.kel  { background: #fff3e0; color: #e65100; }
-
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 9px 6px; border-bottom: 1px solid #e0e0e0; text-align: left; }
     th { background: #1a237e; color: #fff; font-size: 12px; }
@@ -47,31 +34,18 @@
     .kosong  { color: #757575; font-style: italic; }
     .total-row td { font-weight: bold; background: #e8eaf6; border-top: 2px solid #1a237e; }
     .tfoot-note { font-size: 11px; color: #777; text-align: right; margin-top: 8px; }
-
     .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-    .actions button {
-      flex: 1; padding: 13px; border: none; border-radius: 8px;
-      font-size: 14px; font-weight: bold; cursor: pointer; color: #fff;
-      min-width: 140px; transition: opacity .2s;
-    }
+    .actions button { flex: 1; padding: 13px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; min-width: 140px; transition: opacity .2s; }
     .actions button:active { opacity: .8; transform: scale(.98); }
     .btn-download { background: #2e7d32; }
-    .btn-download:hover { background: #1b5e20; }
     .btn-telegram { background: #0088cc; }
-    .btn-telegram:hover { background: #006699; }
     .btn-install  { background: #ff6f00; }
-    .btn-install:hover { background: #e65100; }
     button:disabled { background: #bdbdbd !important; cursor: not-allowed; }
-
     .status { margin-top: 10px; text-align: center; font-size: 13px; color: #555; min-height: 20px; }
     .loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
-
     @media (max-width: 480px) {
-      body { padding: 10px; }
-      .container { padding: 14px; }
-      h2 { font-size: 17px; }
-      th, td { padding: 8px 4px; font-size: 12px; }
-      .actions button { font-size: 13px; padding: 11px; }
+      body { padding: 10px; } .container { padding: 14px; } h2 { font-size: 17px; }
+      th, td { padding: 8px 4px; font-size: 12px; } .actions button { font-size: 13px; padding: 11px; }
     }
   </style>
 </head>
@@ -113,24 +87,20 @@
   </div>
 
   <script>
-    // 🔴 GANTI DENGAN URL /exec DARI DEPLOY APPS SCRIPT ANDA
+    // URL API ANDA (Sudah terisi otomatis)
     const API_URL = 'https://script.google.com/macros/s/AKfycbxcMxviGnt1YrMlb5ouU0Ej7A0Xmtpw4d6YsrJGwOlGVWCLGmXrEHRMBv6gRFdVV9th/exec';
 
-    // ============ INIT ============
     window.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       const selTahun = document.getElementById('tahun');
       for (let y = now.getFullYear(); y >= 2020; y--) {
-        const o = document.createElement('option');
-        o.value = y; o.textContent = y;
-        selTahun.appendChild(o);
+        const o = document.createElement('option'); o.value = y; o.textContent = y; selTahun.appendChild(o);
       }
       selTahun.value = now.getFullYear();
       document.getElementById('bulan').selectedIndex = now.getMonth() + 1;
       muatData();
     });
 
-    // ============ MUAT DATA ============
     async function muatData() {
       const bulan = document.getElementById('bulan').value;
       const tahun = document.getElementById('tahun').value;
@@ -140,16 +110,12 @@
       status.textContent = '⏳ Memuat data...';
       document.getElementById('btnDownload').disabled = true;
       document.getElementById('btnTelegram').disabled = true;
-      document.getElementById('tbody').innerHTML =
-        '<tr><td colspan="4" class="loading">⏳ Memuat...</td></tr>';
-      document.getElementById('periodeText').textContent =
-        `Periode: ${bulan} ${tahun}`;
+      document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading">⏳ Memuat...</td></tr>';
+      document.getElementById('periodeText').textContent = `Periode: ${bulan} ${tahun}`;
       document.getElementById('tfootNote').textContent = '';
 
       try {
-        const url = `${API_URL}?action=getAbsensi` +
-          `&year=${encodeURIComponent(tahun)}` +
-          `&month=${encodeURIComponent(bulan)}`;
+        const url = `${API_URL}?action=getAbsensi&year=${encodeURIComponent(tahun)}&month=${encodeURIComponent(bulan)}`;
         const res = await fetch(url, { cache: 'no-store' });
         const json = await res.json();
         if (!json.success) throw new Error(json.error || 'Gagal memuat');
@@ -157,60 +123,44 @@
         renderTabel(json, bulan, tahun);
         document.getElementById('btnDownload').disabled = false;
         document.getElementById('btnTelegram').disabled = false;
-        status.textContent =
-          `✅ ${json.jumlahKelurahan} Kelurahan + ${json.jumlahDesa} Desa dimuat.`;
+        status.textContent = `✅ ${json.jumlahKelurahan} Kelurahan + ${json.jumlahDesa} Desa dimuat.`;
       } catch (err) {
         status.textContent = '❌ ' + err.message;
-        document.getElementById('tbody').innerHTML =
-          '<tr><td colspan="4" class="loading" style="color:#c62828;">' +
-          'Gagal memuat. Periksa API_URL / koneksi.</td></tr>';
+        document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading" style="color:#c62828;">Gagal memuat. Periksa koneksi atau API_URL.</td></tr>';
       }
     }
 
-    // ============ RENDER TABEL ============
     function renderTabel(json, bulan, tahun) {
-      document.getElementById('periodeText').textContent =
-        `Periode: ${bulan} ${tahun}`;
-
+      document.getElementById('periodeText').textContent = `Periode: ${bulan} ${tahun}`;
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
       const data = json.data || [];
 
       if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="loading">' +
-          'Tidak ada data untuk periode ini.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="loading">Tidak ada data untuk periode ini.</td></tr>';
         document.getElementById('tfootNote').textContent = '';
         return;
       }
 
       data.forEach((it, i) => {
         const tr = document.createElement('tr');
-        const badge = it.jenis === 'Kelurahan'
-          ? '<span class="badge kel">KEL</span>'
-          : '<span class="badge desa">DESA</span>';
+        const badge = it.jenis === 'Kelurahan' ? '<span class="badge kel">KEL</span>' : '<span class="badge desa">DESA</span>';
         tr.innerHTML = `
           <td>${i + 1}</td>
           <td>${badge}${it.desa}</td>
           <td><strong>${it.jumlahZip}</strong></td>
-          <td class="${it.jumlahZip > 0 ? 'lengkap' : 'kosong'}">
-            ${it.jumlahZip > 0 ? '✅ Ada' : '⛔ Kosong'}
-          </td>`;
+          <td class="${it.jumlahZip > 0 ? 'lengkap' : 'kosong'}">${it.jumlahZip > 0 ? '✅ Ada' : '⛔ Kosong'}</td>`;
         tbody.appendChild(tr);
       });
 
       const trTotal = document.createElement('tr');
       trTotal.className = 'total-row';
-      trTotal.innerHTML =
-        `<td colspan="2"><strong>TOTAL (${data.length} wilayah)</strong></td>` +
-        `<td><strong>${json.total}</strong></td><td></td>`;
+      trTotal.innerHTML = `<td colspan="2"><strong>TOTAL (${data.length} wilayah)</strong></td><td><strong>${json.total}</strong></td><td></td>`;
       tbody.appendChild(trTotal);
 
-      const now = new Date();
-      document.getElementById('tfootNote').textContent =
-        `Dibuat: ${now.toLocaleString('id-ID')}`;
+      document.getElementById('tfootNote').textContent = `Dibuat: ${new Date().toLocaleString('id-ID')}`;
     }
 
-    // ============ DOWNLOAD + SHARE ============
     async function downloadDanShare() {
       const area = document.getElementById('areaAbsensi');
       const status = document.getElementById('status');
@@ -222,13 +172,10 @@
       document.getElementById('btnDownload').disabled = true;
 
       try {
-        const canvas = await html2canvas(area, {
-          scale: 2, backgroundColor: '#ffffff', useCORS: true
-        });
+        const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
         const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
         const fileName = `Absensi_${bulan}_${tahun}.png`;
 
-        // Download otomatis
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = fileName;
@@ -236,42 +183,23 @@
         link.click();
         document.body.removeChild(link);
 
-        // Share API (WhatsApp, dll)
         if (navigator.canShare) {
           const file = new File([blob], fileName, { type: 'image/png' });
           if (navigator.canShare({ files: [file] })) {
             try {
-              await navigator.share({
-                files: [file],
-                title: 'Absensi ZIP',
-                text: `Absensi ZIP ${bulan} ${tahun}`
-              });
+              await navigator.share({ files: [file], title: 'Absensi ZIP', text: `Absensi ZIP ${bulan} ${tahun}` });
               status.textContent = '✅ Gambar dibagikan.';
-            } catch (e) {
-              status.textContent = '📥 Terunduh. Share dibatalkan.';
-            }
+            } catch (e) { status.textContent = '📥 Terunduh. Share dibatalkan.'; }
             document.getElementById('btnDownload').disabled = false;
             return;
           }
         }
-
-        // Fallback WhatsApp teks
-        window.open(
-          'https://wa.me/?text=' +
-          encodeURIComponent(
-            `Absensi ZIP ${bulan} ${tahun}\n` +
-            `(Lampirkan gambar ${fileName} yang sudah terunduh)`
-          ),
-          '_blank'
-        );
+        window.open('https://wa.me/?text=' + encodeURIComponent(`Absensi ZIP ${bulan} ${tahun}\n(Lampirkan gambar ${fileName})`), '_blank');
         status.textContent = '📥 Terunduh. WhatsApp dibuka.';
-      } catch (err) {
-        status.textContent = '❌ ' + err.message;
-      }
+      } catch (err) { status.textContent = '❌ ' + err.message; }
       document.getElementById('btnDownload').disabled = false;
     }
 
-    // ============ KIRIM TELEGRAM ============
     async function kirimTelegram() {
       const bulan = document.getElementById('bulan').value;
       const tahun = document.getElementById('tahun').value;
@@ -282,64 +210,38 @@
       status.textContent = '⏳ Mengirim ke Telegram...';
 
       try {
-        const canvas = await html2canvas(
-          document.getElementById('areaAbsensi'),
-          { scale: 2, backgroundColor: '#ffffff', useCORS: true }
-        );
+        const canvas = await html2canvas(document.getElementById('areaAbsensi'), { scale: 2, backgroundColor: '#ffffff', useCORS: true });
         const base64 = canvas.toDataURL('image/png');
 
-        // form-encoded untuk hindari CORS preflight
         const body = new URLSearchParams();
         body.append('action', 'telegram');
         body.append('base64', base64);
         body.append('bulan', bulan);
         body.append('tahun', tahun);
 
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body,
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        });
+        const res = await fetch(API_URL, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
         const json = await res.json();
         status.textContent = json.message || (json.success ? '✅ Terkirim' : '❌ Gagal');
-      } catch (err) {
-        status.textContent = '❌ ' + err.message;
-      }
+      } catch (err) { status.textContent = '❌ ' + err.message; }
       document.getElementById('btnTelegram').disabled = false;
     }
 
-    // ============ INSTALL PWA ============
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault();
-      deferredPrompt = e;
+      e.preventDefault(); deferredPrompt = e;
       document.getElementById('btnInstall').style.display = 'block';
     });
-
     async function installApp() {
-      if (!deferredPrompt) {
-        alert('Install tidak tersedia otomatis.\n\n' +
-          'Chrome (Android/PC): menu ⋮ → "Install app" / "Tambahkan ke layar utama".\n' +
-          'iOS Safari: tombol Share → "Add to Home Screen".');
-        return;
-      }
+      if (!deferredPrompt) { alert('Buka menu Chrome → "Install app" / "Tambahkan ke layar utama".'); return; }
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        document.getElementById('btnInstall').style.display = 'none';
-      }
+      if (outcome === 'accepted') document.getElementById('btnInstall').style.display = 'none';
       deferredPrompt = null;
     }
+    window.addEventListener('appinstalled', () => { document.getElementById('btnInstall').style.display = 'none'; });
 
-    window.addEventListener('appinstalled', () => {
-      document.getElementById('btnInstall').style.display = 'none';
-    });
-
-    // ============ SERVICE WORKER ============
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err));
-      });
+      window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err)); });
     }
   </script>
 </body>
