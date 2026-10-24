@@ -4,83 +4,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1a237e">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Absensi ZIP">
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-  <link rel="apple-touch-icon" href="icon-192.png">
   <title>Absensi ZIP Desa</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
     body { background: #f0f4f8; margin: 0; padding: 16px; padding-bottom: 32px; }
     .container { max-width: 750px; margin: auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
-    h2 { text-align: center; color: #1a237e; margin: 0 0 16px; font-size: 20px; }
+    h2 { text-align: center; color: #1a237e; margin: 0 0 10px; font-size: 20px; }
+    .btn-jadwal { display: block; text-align: center; background: #ff6f00; color: #fff; text-decoration: none; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 16px; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .btn-jadwal:hover { background: #e65100; }
     .filter { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
-    .filter select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; background: #fff; cursor: pointer; min-width: 120px; }
-    #area { border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; background: #fafafa; min-height: 120px; overflow-x: auto; }
-    #area h3 { margin: 0 0 6px; text-align: center; color: #1a237e; font-size: 16px; }
-    #area p.sub { text-align: center; margin: 0 0 12px; color: #666; font-size: 13px; }
-    .badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 4px; vertical-align: middle; }
-    .badge.desa { background: #e8eaf6; color: #1a237e; }
-    .badge.kel  { background: #fff3e0; color: #e65100; }
+    .filter select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; }
+    #areaAbsensi { border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; background: #fafafa; overflow-x: auto; }
+    #areaAbsensi h3 { margin: 0 0 6px; text-align: center; color: #1a237e; font-size: 16px; }
+    #areaAbsensi p.sub { text-align: center; margin: 0 0 12px; color: #666; font-size: 13px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 9px 6px; border-bottom: 1px solid #e0e0e0; text-align: left; }
     th { background: #1a237e; color: #fff; font-size: 12px; }
     tr:nth-child(even) { background: #f5f5f5; }
     .lengkap { color: #2e7d32; font-weight: bold; }
-    .kosong  { color: #757575; font-style: italic; }
+    .kosong { color: #757575; font-style: italic; }
     .total-row td { font-weight: bold; background: #e8eaf6; border-top: 2px solid #1a237e; }
-    .tfoot-note { font-size: 11px; color: #777; text-align: right; margin-top: 8px; }
+    .badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 4px; }
+    .badge.desa { background: #e8eaf6; color: #1a237e; }
+    .badge.kel { background: #fff3e0; color: #e65100; }
     .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-    .actions button { flex: 1; padding: 13px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; min-width: 140px; transition: opacity .2s; }
-    .actions button:active { opacity: .8; transform: scale(.98); }
+    .actions button { flex: 1; padding: 13px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; min-width: 140px; }
     .btn-download { background: #2e7d32; }
     .btn-telegram { background: #0088cc; }
-    .btn-install  { background: #ff6f00; }
+    .btn-install { background: #ff6f00; }
     button:disabled { background: #bdbdbd !important; cursor: not-allowed; }
-    .status { margin-top: 10px; text-align: center; font-size: 13px; color: #555; min-height: 20px; }
+    .status { margin-top: 10px; text-align: center; font-size: 13px; color: #555; }
     .loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
-    @media (max-width: 480px) {
-      body { padding: 10px; } .container { padding: 14px; } h2 { font-size: 17px; }
-      th, td { padding: 8px 4px; font-size: 12px; } .actions button { font-size: 13px; padding: 11px; }
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>📋 Absensi ZIP Desa/Kelurahan</h2>
-    <div style="text-align:center; margin-bottom:15px;">
-  <a href="jadwal.html" style="background:#ff6f00; color:#fff; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:13px; font-weight:bold;">👮 Lihat Jadwal Jaga Harian</a>
-</div>
-
+    <h2>📋 Laporan Absensi ZIP</h2>
+    <a href="jadwal.html" class="btn-jadwal">👮 Lihat Jadwal Jaga Harian</a>
     <div class="filter">
       <select id="bulan" onchange="muatData()">
         <option value="">-- Pilih Bulan --</option>
-        <option>Januari</option><option>Februari</option><option>Maret</option>
-        <option>April</option><option>Mei</option><option>Juni</option>
-        <option>Juli</option><option>Agustus</option><option>September</option>
-        <option>Oktober</option><option>November</option><option>Desember</option>
+        <option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option>Oktober</option><option>November</option><option>Desember</option>
       </select>
       <select id="tahun" onchange="muatData()"></select>
     </div>
-
     <div id="areaAbsensi">
       <h3>Laporan Absensi ZIP</h3>
       <p class="sub" id="periodeText">Memuat data...</p>
       <table>
-        <thead>
-          <tr><th>No</th><th>Desa / Kelurahan</th><th>ZIP</th><th>Status</th></tr>
-        </thead>
-        <tbody id="tbody">
-          <tr><td colspan="4" class="loading">⏳ Memuat data...</td></tr>
-        </tbody>
+        <thead><tr><th>No</th><th>Desa / Kelurahan</th><th>ZIP</th><th>Status</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="4" class="loading">⏳ Memuat data...</td></tr></tbody>
       </table>
-      <div class="tfoot-note" id="tfootNote"></div>
     </div>
-
     <div class="actions">
       <button class="btn-download" id="btnDownload" onclick="downloadDanShare()" disabled>📥 Download & Share</button>
       <button class="btn-telegram" id="btnTelegram" onclick="kirimTelegram()" disabled>📤 Kirim Telegram</button>
@@ -88,11 +65,8 @@
     </div>
     <div class="status" id="status"></div>
   </div>
-
   <script>
-    // URL API ANDA (Sudah terisi otomatis)
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxcMxviGnt1YrMlb5ouU0Ej7A0Xmtpw4d6YsrJGwOlGVWCLGmXrEHRMBv6gRFdVV9th/exec';
-
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwrz4o1rJrKaaF3WRF9t6qX5gaP32S4iE8RNIRwBGPU_A6bQmEC84hfL1iaJ2AMLi11/exec';
     window.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       const selTahun = document.getElementById('tahun');
@@ -103,149 +77,72 @@
       document.getElementById('bulan').selectedIndex = now.getMonth() + 1;
       muatData();
     });
-
     async function muatData() {
       const bulan = document.getElementById('bulan').value;
       const tahun = document.getElementById('tahun').value;
-      const status = document.getElementById('status');
       if (!bulan) return;
-
-      status.textContent = '⏳ Memuat data...';
       document.getElementById('btnDownload').disabled = true;
       document.getElementById('btnTelegram').disabled = true;
       document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading">⏳ Memuat...</td></tr>';
       document.getElementById('periodeText').textContent = `Periode: ${bulan} ${tahun}`;
-      document.getElementById('tfootNote').textContent = '';
-
       try {
-        const url = `${API_URL}?action=getAbsensi&year=${encodeURIComponent(tahun)}&month=${encodeURIComponent(bulan)}`;
-        const res = await fetch(url, { cache: 'no-store' });
+        const res = await fetch(`${API_URL}?action=getAbsensi&year=${tahun}&month=${bulan}`, { cache: 'no-store' });
         const json = await res.json();
-        if (!json.success) throw new Error(json.error || 'Gagal memuat');
-
-        renderTabel(json, bulan, tahun);
+        if (!json.success) throw new Error(json.error);
+        const tbody = document.getElementById('tbody');
+        tbody.innerHTML = '';
+        const data = json.data || [];
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="loading">Tidak ada data.</td></tr>';
+        } else {
+          data.forEach((it, i) => {
+            const badge = it.jenis === 'Kelurahan' ? '<span class="badge kel">KEL</span>' : '<span class="badge desa">DESA</span>';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${i+1}</td><td>${badge}${it.desa}</td><td><strong>${it.jumlahZip}</strong></td><td class="${it.jumlahZip > 0 ? 'lengkap' : 'kosong'}">${it.jumlahZip > 0 ? '✅ Ada' : '⛔ Kosong'}</td>`;
+            tbody.appendChild(tr);
+          });
+          const trTotal = document.createElement('tr');
+          trTotal.className = 'total-row';
+          trTotal.innerHTML = `<td colspan="2"><strong>TOTAL (${data.length} wilayah)</strong></td><td><strong>${json.total}</strong></td><td></td>`;
+          tbody.appendChild(trTotal);
+        }
         document.getElementById('btnDownload').disabled = false;
         document.getElementById('btnTelegram').disabled = false;
-        status.textContent = `✅ ${json.jumlahKelurahan} Kelurahan + ${json.jumlahDesa} Desa dimuat.`;
       } catch (err) {
-        status.textContent = '❌ ' + err.message;
-        document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading" style="color:#c62828;">Gagal memuat. Periksa koneksi atau API_URL.</td></tr>';
+        document.getElementById('tbody').innerHTML = `<tr><td colspan="4" class="loading" style="color:red;">Gagal: ${err.message}</td></tr>`;
       }
     }
-
-    function renderTabel(json, bulan, tahun) {
-      document.getElementById('periodeText').textContent = `Periode: ${bulan} ${tahun}`;
-      const tbody = document.getElementById('tbody');
-      tbody.innerHTML = '';
-      const data = json.data || [];
-
-      if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="loading">Tidak ada data untuk periode ini.</td></tr>';
-        document.getElementById('tfootNote').textContent = '';
-        return;
-      }
-
-      data.forEach((it, i) => {
-        const tr = document.createElement('tr');
-        const badge = it.jenis === 'Kelurahan' ? '<span class="badge kel">KEL</span>' : '<span class="badge desa">DESA</span>';
-        tr.innerHTML = `
-          <td>${i + 1}</td>
-          <td>${badge}${it.desa}</td>
-          <td><strong>${it.jumlahZip}</strong></td>
-          <td class="${it.jumlahZip > 0 ? 'lengkap' : 'kosong'}">${it.jumlahZip > 0 ? '✅ Ada' : '⛔ Kosong'}</td>`;
-        tbody.appendChild(tr);
-      });
-
-      const trTotal = document.createElement('tr');
-      trTotal.className = 'total-row';
-      trTotal.innerHTML = `<td colspan="2"><strong>TOTAL (${data.length} wilayah)</strong></td><td><strong>${json.total}</strong></td><td></td>`;
-      tbody.appendChild(trTotal);
-
-      document.getElementById('tfootNote').textContent = `Dibuat: ${new Date().toLocaleString('id-ID')}`;
-    }
-
     async function downloadDanShare() {
-      const area = document.getElementById('areaAbsensi');
-      const status = document.getElementById('status');
-      const bulan = document.getElementById('bulan').value;
-      const tahun = document.getElementById('tahun').value;
-      if (!bulan) { status.textContent = '⚠️ Pilih bulan dulu.'; return; }
-
-      status.textContent = '⏳ Membuat gambar...';
-      document.getElementById('btnDownload').disabled = true;
-
-      try {
-        const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-        const fileName = `Absensi_${bulan}_${tahun}.png`;
-
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        if (navigator.canShare) {
-          const file = new File([blob], fileName, { type: 'image/png' });
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({ files: [file], title: 'Absensi ZIP', text: `Absensi ZIP ${bulan} ${tahun}` });
-              status.textContent = '✅ Gambar dibagikan.';
-            } catch (e) { status.textContent = '📥 Terunduh. Share dibatalkan.'; }
-            document.getElementById('btnDownload').disabled = false;
-            return;
-          }
+      const canvas = await html2canvas(document.getElementById('areaAbsensi'), { scale: 2, backgroundColor: '#ffffff' });
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      const fileName = `Absensi_${document.getElementById('bulan').value}_${document.getElementById('tahun').value}.png`;
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
+      if (navigator.canShare) {
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'Absensi ZIP' }); return; } catch(e) {}
         }
-        window.open('https://wa.me/?text=' + encodeURIComponent(`Absensi ZIP ${bulan} ${tahun}\n(Lampirkan gambar ${fileName})`), '_blank');
-        status.textContent = '📥 Terunduh. WhatsApp dibuka.';
-      } catch (err) { status.textContent = '❌ ' + err.message; }
-      document.getElementById('btnDownload').disabled = false;
+      }
+      window.open('https://wa.me/?text=' + encodeURIComponent(`Absensi ZIP ${fileName}`), '_blank');
     }
-
     async function kirimTelegram() {
-      const bulan = document.getElementById('bulan').value;
-      const tahun = document.getElementById('tahun').value;
-      const status = document.getElementById('status');
-      if (!bulan) { status.textContent = '⚠️ Pilih bulan dulu.'; return; }
-
       document.getElementById('btnTelegram').disabled = true;
-      status.textContent = '⏳ Mengirim ke Telegram...';
-
-      try {
-        const canvas = await html2canvas(document.getElementById('areaAbsensi'), { scale: 2, backgroundColor: '#ffffff', useCORS: true });
-        const base64 = canvas.toDataURL('image/png');
-
-        const body = new URLSearchParams();
-        body.append('action', 'telegram');
-        body.append('base64', base64);
-        body.append('bulan', bulan);
-        body.append('tahun', tahun);
-
-        const res = await fetch(API_URL, { method: 'POST', body, headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
-        const json = await res.json();
-        status.textContent = json.message || (json.success ? '✅ Terkirim' : '❌ Gagal');
-      } catch (err) { status.textContent = '❌ ' + err.message; }
+      document.getElementById('status').textContent = '⏳ Mengirim ke Telegram...';
+      const canvas = await html2canvas(document.getElementById('areaAbsensi'), { scale: 2 });
+      const base64 = canvas.toDataURL('image/png');
+      const body = new URLSearchParams({ action: 'telegram', base64, bulan: document.getElementById('bulan').value, tahun: document.getElementById('tahun').value });
+      const res = await fetch(API_URL, { method: 'POST', body });
+      const json = await res.json();
+      document.getElementById('status').textContent = json.message;
       document.getElementById('btnTelegram').disabled = false;
     }
-
     let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault(); deferredPrompt = e;
-      document.getElementById('btnInstall').style.display = 'block';
-    });
-    async function installApp() {
-      if (!deferredPrompt) { alert('Buka menu Chrome → "Install app" / "Tambahkan ke layar utama".'); return; }
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') document.getElementById('btnInstall').style.display = 'none';
-      deferredPrompt = null;
-    }
-    window.addEventListener('appinstalled', () => { document.getElementById('btnInstall').style.display = 'none'; });
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err)); });
-    }
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('btnInstall').style.display = 'block'; });
+    async function installApp() { if(!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt = null; document.getElementById('btnInstall').style.display = 'none'; }
+    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
   </script>
 </body>
 </html>
