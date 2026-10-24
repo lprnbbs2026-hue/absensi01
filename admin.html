@@ -3,22 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1a237e">
   <title>Edit Jadwal Jaga</title>
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
     body { background: #f0f4f8; margin: 0; padding: 16px; }
-    .container { max-width: 600px; margin: auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
+    .container { max-width: 600px; margin: auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.1); margin-bottom: 30px; }
     h2 { text-align: center; color: #1a237e; margin: 0 0 16px; font-size: 20px; }
-    .form-group { margin-bottom: 12px; display: flex; gap: 8px; }
+    h3 { font-size: 15px; color: #1a237e; margin-top: 20px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .form-group { margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
     .form-group input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
     .form-group input[type="text"]:first-child { flex: 2; }
     .form-group input[type="text"]:nth-child(2) { flex: 1; }
+    .form-jadwal { background: #e8eaf6; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+    .form-jadwal input[type="date"] { width: 100%; padding: 10px; border: 1px solid #aaa; border-radius: 6px; margin-bottom: 10px; }
+    .checkbox-list { background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 10px; max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
+    .checkbox-item { display: flex; align-items: center; padding: 6px; font-size: 14px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+    .checkbox-item:last-child { border-bottom: none; }
+    .checkbox-item input { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+    .btn-add-jadwal { background: #ff6f00; color: #fff; border: none; border-radius: 6px; padding: 10px; font-weight: bold; cursor: pointer; font-size: 14px; width: 100%; }
     .btn-add { background: #2e7d32; color: #fff; border: none; border-radius: 6px; padding: 10px 16px; font-weight: bold; cursor: pointer; }
-    .list-box { border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 16px; max-height: 400px; overflow-y: auto; }
+    .list-box { border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 16px; max-height: 250px; overflow-y: auto; }
     .list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-    .list-item:last-child { border-bottom: none; }
-    .list-item:nth-child(even) { background: #fafafa; }
     .list-item strong { color: #1a237e; }
     .btn-del { background: #c62828; color: #fff; border: none; border-radius: 4px; padding: 4px 8px; font-size: 12px; cursor: pointer; }
     .actions { display: flex; gap: 10px; margin-top: 16px; }
@@ -31,21 +36,34 @@
 </head>
 <body>
   <div class="container">
-    <h2>✏️ Edit Daftar Petugas Jaga</h2>
+    <h2>✏️ Edit Jadwal Jaga</h2>
+    
+    <!-- JADWAL MANUAL -->
+    <h3>Buat Jadwal Manual</h3>
+    <div class="form-jadwal">
+      <input type="date" id="inputTanggalManual">
+      <div style="font-size: 13px; font-weight: bold; color: #555; margin-bottom: 5px;">Pilih Petugas (Bisa > 1):</div>
+      <div class="checkbox-list" id="checkboxList"></div>
+      <button class="btn-add-jadwal" onclick="simpanJadwalManual()" id="btnSimpanManual">💾 Simpan Jadwal Ke Tanggal Ini</button>
+    </div>
+
+    <!-- DAFTAR PERSONIL ROTASI -->
+    <h3>Daftar Personil Rotasi Harian</h3>
     <div class="form-group">
       <input type="text" id="inputNama" placeholder="Nama Lengkap">
       <input type="text" id="inputPangkat" placeholder="Pangkat">
       <button class="btn-add" onclick="tambahPersonil()">Tambah</button>
     </div>
     <div class="list-box" id="listBox"></div>
+    
     <div class="actions">
-      <button class="btn-save" onclick="simpanKeDrive()" id="btnSave">💾 Simpan ke Google Drive</button>
+      <button class="btn-save" onclick="simpanDaftarPersonil()" id="btnSavePersonil">💾 Simpan Daftar Personil</button>
       <a href="jadwal.html" class="btn-back">⬅️ Kembali</a>
     </div>
     <div class="status" id="status"></div>
   </div>
+
   <script>
-    // URL API BARU ANDA
     const API_URL = 'https://script.google.com/macros/s/AKfycbzS6h71xAM5aaFV8PxQwrt5qvsLPFkuIuHhzw-rPUAKfZqi0jTQnIwhyPFPhSgaJLbK/exec';
     let dataPersonil = [];
 
@@ -54,11 +72,12 @@
         const res = await fetch(API_URL + '?action=getListFull');
         const json = await res.json();
         if (json.success && json.data.length > 0) dataPersonil = json.data;
-        renderList();
-      } catch(e) { renderList(); }
+      } catch(e) {}
+      renderListPersonil();
+      renderCheckboxPersonil();
     });
 
-    function renderList() {
+    function renderListPersonil() {
       const listBox = document.getElementById('listBox');
       listBox.innerHTML = '';
       if (dataPersonil.length === 0) {
@@ -73,6 +92,21 @@
       });
     }
 
+    function renderCheckboxPersonil() {
+      const container = document.getElementById('checkboxList');
+      container.innerHTML = '';
+      if (dataPersonil.length === 0) {
+        container.innerHTML = '<div style="font-size:12px;color:#999;">Tambah personil terlebih dahulu.</div>';
+        return;
+      }
+      dataPersonil.forEach(p => {
+        const label = document.createElement('label');
+        label.className = 'checkbox-item';
+        label.innerHTML = `<input type="checkbox" value="${p.nama}"> ${p.nama} <span style="color:#777;font-size:12px;">(${p.pangkat})</span>`;
+        container.appendChild(label);
+      });
+    }
+
     function tambahPersonil() {
       const nama = document.getElementById('inputNama').value.trim();
       const pangkat = document.getElementById('inputPangkat').value.trim();
@@ -80,16 +114,21 @@
       dataPersonil.push({ nama, pangkat });
       document.getElementById('inputNama').value = '';
       document.getElementById('inputPangkat').value = '';
-      renderList();
+      renderListPersonil();
+      renderCheckboxPersonil();
     }
 
-    function hapusPersonil(index) { dataPersonil.splice(index, 1); renderList(); }
+    function hapusPersonil(index) { 
+      dataPersonil.splice(index, 1); 
+      renderListPersonil(); 
+      renderCheckboxPersonil();
+    }
 
-    async function simpanKeDrive() {
+    async function simpanDaftarPersonil() {
       if (dataPersonil.length === 0) { alert('Daftar masih kosong!'); return; }
       let csv = 'Nama,Pangkat\n';
       dataPersonil.forEach(p => { csv += `${p.nama},${p.pangkat}\n`; });
-      document.getElementById('btnSave').disabled = true;
+      document.getElementById('btnSavePersonil').disabled = true;
       document.getElementById('status').textContent = '⏳ Menyimpan ke Drive...';
       document.getElementById('status').className = 'status';
       try {
@@ -106,7 +145,40 @@
         document.getElementById('status').className = 'status error';
         document.getElementById('status').textContent = '❌ ' + err.message;
       }
-      document.getElementById('btnSave').disabled = false;
+      document.getElementById('btnSavePersonil').disabled = false;
+    }
+
+    async function simpanJadwalManual() {
+      const tanggal = document.getElementById('inputTanggalManual').value;
+      if (!tanggal) { alert('Pilih tanggal terlebih dahulu!'); return; }
+      
+      const checkboxes = document.querySelectorAll('#checkboxList input[type="checkbox"]:checked');
+      if (checkboxes.length === 0) { alert('Pilih minimal 1 petugas!'); return; }
+      
+      const listNama = Array.from(checkboxes).map(cb => cb.value);
+      const csvString = `${tanggal},${listNama.join(' | ')}`;
+      
+      document.getElementById('btnSimpanManual').disabled = true;
+      document.getElementById('status').textContent = '⏳ Menyimpan jadwal...';
+      document.getElementById('status').className = 'status';
+      
+      try {
+        const body = new URLSearchParams();
+        body.append('action', 'saveJadwalManual');
+        body.append('csvData', csvString);
+        const res = await fetch(API_URL, { method: 'POST', body });
+        const json = await res.json();
+        if (json.success) {
+          document.getElementById('status').className = 'status success';
+          document.getElementById('status').textContent = `✅ Jadwal tanggal ${tanggal} disimpan!`;
+          document.getElementById('inputTanggalManual').value = '';
+          document.querySelectorAll('#checkboxList input[type="checkbox"]').forEach(cb => cb.checked = false);
+        } else { throw new Error(json.error); }
+      } catch (err) {
+        document.getElementById('status').className = 'status error';
+        document.getElementById('status').textContent = '❌ ' + err.message;
+      }
+      document.getElementById('btnSimpanManual').disabled = false;
     }
   </script>
 </body>
