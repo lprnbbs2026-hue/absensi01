@@ -268,4 +268,79 @@
       } catch (err) {
         status.textContent = '❌ ' + err.message;
       }
-      document.getElementById('btnDownload
+      document.getElementById('btnDownload').disabled = false;
+    }
+
+    // ============ KIRIM TELEGRAM ============
+    async function kirimTelegram() {
+      const bulan = document.getElementById('bulan').value;
+      const tahun = document.getElementById('tahun').value;
+      const status = document.getElementById('status');
+      if (!bulan) { status.textContent = '⚠️ Pilih bulan dulu.'; return; }
+
+      document.getElementById('btnTelegram').disabled = true;
+      status.textContent = '⏳ Mengirim ke Telegram...';
+
+      try {
+        const canvas = await html2canvas(
+          document.getElementById('areaAbsensi'),
+          { scale: 2, backgroundColor: '#ffffff', useCORS: true }
+        );
+        const base64 = canvas.toDataURL('image/png');
+
+        // form-encoded untuk hindari CORS preflight
+        const body = new URLSearchParams();
+        body.append('action', 'telegram');
+        body.append('base64', base64);
+        body.append('bulan', bulan);
+        body.append('tahun', tahun);
+
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          body,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        const json = await res.json();
+        status.textContent = json.message || (json.success ? '✅ Terkirim' : '❌ Gagal');
+      } catch (err) {
+        status.textContent = '❌ ' + err.message;
+      }
+      document.getElementById('btnTelegram').disabled = false;
+    }
+
+    // ============ INSTALL PWA ============
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('btnInstall').style.display = 'block';
+    });
+
+    async function installApp() {
+      if (!deferredPrompt) {
+        alert('Install tidak tersedia otomatis.\n\n' +
+          'Chrome (Android/PC): menu ⋮ → "Install app" / "Tambahkan ke layar utama".\n' +
+          'iOS Safari: tombol Share → "Add to Home Screen".');
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        document.getElementById('btnInstall').style.display = 'none';
+      }
+      deferredPrompt = null;
+    }
+
+    window.addEventListener('appinstalled', () => {
+      document.getElementById('btnInstall').style.display = 'none';
+    });
+
+    // ============ SERVICE WORKER ============
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.warn('SW:', err));
+      });
+    }
+  </script>
+</body>
+</html>
