@@ -2,39 +2,27 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#1a237e">
-  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Absensi ZIP Desa</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     * { box-sizing: border-box; font-family: Arial, sans-serif; }
-    body { background: #f0f4f8; margin: 0; padding: 16px; padding-bottom: 32px; }
+    body { background: #f0f4f8; margin: 0; padding: 16px; }
     .container { max-width: 750px; margin: auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.1); }
     h2 { text-align: center; color: #1a237e; margin: 0 0 10px; font-size: 20px; }
-    .btn-jadwal { display: block; text-align: center; background: #ff6f00; color: #fff; text-decoration: none; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 16px; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .btn-jadwal:hover { background: #e65100; }
+    .btn-jadwal { display: block; text-align: center; background: #ff6f00; color: #fff; text-decoration: none; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 16px; font-size: 14px; }
     .filter { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
     .filter select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; }
-    #areaAbsensi { border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; background: #fafafa; overflow-x: auto; }
-    #areaAbsensi h3 { margin: 0 0 6px; text-align: center; color: #1a237e; font-size: 16px; }
-    #areaAbsensi p.sub { text-align: center; margin: 0 0 12px; color: #666; font-size: 13px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { padding: 9px 6px; border-bottom: 1px solid #e0e0e0; text-align: left; }
     th { background: #1a237e; color: #fff; font-size: 12px; }
-    tr:nth-child(even) { background: #f5f5f5; }
     .lengkap { color: #2e7d32; font-weight: bold; }
     .kosong { color: #757575; font-style: italic; }
     .total-row td { font-weight: bold; background: #e8eaf6; border-top: 2px solid #1a237e; }
-    .badge { display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 4px; }
-    .badge.desa { background: #e8eaf6; color: #1a237e; }
-    .badge.kel { background: #fff3e0; color: #e65100; }
     .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
     .actions button { flex: 1; padding: 13px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; min-width: 140px; }
     .btn-download { background: #2e7d32; }
     .btn-telegram { background: #0088cc; }
-    .btn-install { background: #ff6f00; }
-    button:disabled { background: #bdbdbd !important; cursor: not-allowed; }
     .status { margin-top: 10px; text-align: center; font-size: 13px; color: #555; }
     .loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
   </style>
@@ -42,7 +30,7 @@
 <body>
   <div class="container">
     <h2>📋 Laporan Absensi ZIP</h2>
-    <a href="jadwal.html" class="btn-jadwal">👮 Lihat Jadwal Jaga Harian</a>
+    <a href="jadwal.html" class="btn-jadwal">👮 Lihat Jadwal Jaga</a>
     <div class="filter">
       <select id="bulan" onchange="muatData()">
         <option value="">-- Pilih Bulan --</option>
@@ -50,25 +38,18 @@
       </select>
       <select id="tahun" onchange="muatData()"></select>
     </div>
-    <div id="areaAbsensi">
-      <h3>Laporan Absensi ZIP</h3>
-      <p class="sub" id="periodeText">Memuat data...</p>
-      <table>
-        <thead><tr><th>No</th><th>Desa / Kelurahan</th><th>ZIP</th><th>Status</th></tr></thead>
-        <tbody id="tbody"><tr><td colspan="4" class="loading">⏳ Memuat data...</td></tr></tbody>
-      </table>
-    </div>
+    <table>
+      <thead><tr><th>No</th><th>Desa / Kelurahan</th><th>ZIP</th><th>Status</th></tr></thead>
+      <tbody id="tbody"><tr><td colspan="4" class="loading">⏳ Memuat data...</td></tr></tbody>
+    </table>
     <div class="actions">
       <button class="btn-download" id="btnDownload" onclick="downloadDanShare()" disabled>📥 Download & Share</button>
       <button class="btn-telegram" id="btnTelegram" onclick="kirimTelegram()" disabled>📤 Kirim Telegram</button>
-      <button class="btn-install" id="btnInstall" onclick="installApp()" style="display:none;">📲 Install Aplikasi</button>
     </div>
     <div class="status" id="status"></div>
   </div>
   <script>
-    // URL API BARU ANDA
     const API_URL = 'https://script.google.com/macros/s/AKfycbzS6h71xAM5aaFV8PxQwrt5qvsLPFkuIuHhzw-rPUAKfZqi0jTQnIwhyPFPhSgaJLbK/exec';
-
     window.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       const selTahun = document.getElementById('tahun');
@@ -86,7 +67,6 @@
       document.getElementById('btnDownload').disabled = true;
       document.getElementById('btnTelegram').disabled = true;
       document.getElementById('tbody').innerHTML = '<tr><td colspan="4" class="loading">⏳ Memuat...</td></tr>';
-      document.getElementById('periodeText').textContent = `Periode: ${bulan} ${tahun}`;
       try {
         const res = await fetch(`${API_URL}?action=getAbsensi&year=${tahun}&month=${bulan}`, { cache: 'no-store' });
         const json = await res.json();
@@ -98,9 +78,8 @@
           tbody.innerHTML = '<tr><td colspan="4" class="loading">Tidak ada data.</td></tr>';
         } else {
           data.forEach((it, i) => {
-            const badge = it.jenis === 'Kelurahan' ? '<span class="badge kel">KEL</span>' : '<span class="badge desa">DESA</span>';
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${i+1}</td><td>${badge}${it.desa}</td><td><strong>${it.jumlahZip}</strong></td><td class="${it.jumlahZip > 0 ? 'lengkap' : 'kosong'}">${it.jumlahZip > 0 ? '✅ Ada' : '⛔ Kosong'}</td>`;
+            tr.innerHTML = `<td>${i+1}</td><td>${it.jenis === 'Kelurahan' ? 'KEL' : 'DESA'} ${it.desa}</td><td><strong>${it.jumlahZip}</strong></td><td class="${it.jumlahZip > 0 ? 'lengkap' : 'kosong'}">${it.jumlahZip > 0 ? '✅ Ada' : '⛔ Kosong'}</td>`;
             tbody.appendChild(tr);
           });
           const trTotal = document.createElement('tr');
@@ -115,25 +94,18 @@
       }
     }
     async function downloadDanShare() {
-      const canvas = await html2canvas(document.getElementById('areaAbsensi'), { scale: 2, backgroundColor: '#ffffff' });
+      const canvas = await html2canvas(document.querySelector('table'), { scale: 2, backgroundColor: '#ffffff' });
       const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
       const fileName = `Absensi_${document.getElementById('bulan').value}_${document.getElementById('tahun').value}.png`;
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = fileName;
       link.click();
-      if (navigator.canShare) {
-        const file = new File([blob], fileName, { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          try { await navigator.share({ files: [file], title: 'Absensi ZIP' }); return; } catch(e) {}
-        }
-      }
-      window.open('https://wa.me/?text=' + encodeURIComponent(`Absensi ZIP ${fileName}`), '_blank');
     }
     async function kirimTelegram() {
       document.getElementById('btnTelegram').disabled = true;
-      document.getElementById('status').textContent = '⏳ Mengirim ke Telegram...';
-      const canvas = await html2canvas(document.getElementById('areaAbsensi'), { scale: 2 });
+      document.getElementById('status').textContent = '⏳ Mengirim...';
+      const canvas = await html2canvas(document.querySelector('table'), { scale: 2 });
       const base64 = canvas.toDataURL('image/png');
       const body = new URLSearchParams({ action: 'telegram', base64, bulan: document.getElementById('bulan').value, tahun: document.getElementById('tahun').value });
       const res = await fetch(API_URL, { method: 'POST', body });
@@ -141,10 +113,6 @@
       document.getElementById('status').textContent = json.message;
       document.getElementById('btnTelegram').disabled = false;
     }
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; document.getElementById('btnInstall').style.display = 'block'; });
-    async function installApp() { if(!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt = null; document.getElementById('btnInstall').style.display = 'none'; }
-    if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
   </script>
 </body>
 </html>

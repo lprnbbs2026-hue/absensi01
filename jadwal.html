@@ -37,14 +37,13 @@
     </div>
     <div class="footer">
       <a href="index.html">⬅️ Absensi</a>
-      <a href="admin.html" style="color:#e65100;">✏️ Edit Jadwal</a>
+      <a href="admin.html" style="color:#e65100;">✏️ Input Jadwal</a>
     </div>
   </div>
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbzS6h71xAM5aaFV8PxQwrt5qvsLPFkuIuHhzw-rPUAKfZqi0jTQnIwhyPFPhSgaJLbK/exec';
     
-    // Ambil tanggal hari ini (format YYYY-MM-DD untuk dicocokkan dengan file CSV)
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -56,7 +55,6 @@
     async function muatJadwal() {
       const content = document.getElementById('mainContent');
       try {
-        // 1. Cek dulu apakah ada jadwal manual untuk hari ini
         const resManual = await fetch(API_URL + '?action=getJadwalManual');
         const jsonManual = await resManual.json();
         
@@ -71,19 +69,17 @@
           }
         }
 
-        // 2. Ambil jadwal rotasi otomatis (untuk hari ini & besok)
         const resAuto = await fetch(API_URL + '?action=getJadwal');
         const jsonAuto = await resAuto.json();
         if (!jsonAuto.success) throw new Error(jsonAuto.error);
 
-        // 3. Tampilkan ke HTML
         let html = '';
 
         if (isManual) {
           html += `
             <div class="label" style="color:#e65100;">⭐ Jadwal Khusus Hari Ini</div>
             <div class="petugas-utama" style="background:#fff3e0; border-color:#ff6f00;">
-              <div class="nama" style="font-size:16px;">${namaManual}</div>
+              <div class="nama" style="font-size:16px;">${namaManual.replace(/ \| /g, '<br>')}</div>
             </div>
           `;
         } else {
@@ -107,7 +103,7 @@
         content.innerHTML = html;
 
       } catch (err) {
-        content.innerHTML = `<div class="error">❌ ${err.message}<br><br><small>Pastikan file CSV ada di Google Drive dan API sudah di-deploy ulang.</small></div>`;
+        content.innerHTML = `<div class="error">❌ ${err.message}<br><br><small>Pastikan CSV ada di Drive dan API sudah di-deploy ulang.</small></div>`;
       }
     }
     muatJadwal();
