@@ -52,8 +52,8 @@
     }
 
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    caption { padding: 0 0 12px; color: #1a237e; font-size: 18px; font-weight: bold; }
-    caption span { display: block; margin-top: 4px; font-size: 14px; }
+    .report-title { margin: 0 0 12px; color: #1a237e; font-size: 18px; text-align: center; }
+    .report-title span { display: block; margin-top: 4px; font-size: 14px; }
     th, td { padding: 9px 6px; border-bottom: 1px solid #e0e0e0; text-align: left; }
     th { background: #1a237e; color: #fff; font-size: 12px; }
     
@@ -88,36 +88,36 @@
 </head>
 <body>
   <div class="container">
-    <h2>📋 Laporan Absensi ZIP</h2>
-    
-    <div class="filter">
-      <select id="bulan" onchange="muatData()">
-        <option value="">-- Pilih Bulan --</option>
-        <option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option>Oktober</option><option>November</option><option>Desember</option>
-      </select>
-      <select id="tahun" onchange="muatData()"></select>
-    </div>
-
-    <!-- LOADING PROGRESS BAR -->
-    <div class="loading-wrapper" id="loadingWrapper">
-      <div class="loading-text-row">
-        <span>⏳ Memuat data...</span>
-        <span id="persenText">0%</span>
+    <div id="laporanGambar">
+      <h2 class="report-title">Laporan Absensi Dukops<span id="judulPeriode"></span></h2>
+      <div class="filter">
+        <select id="bulan" onchange="muatData()">
+          <option value="">-- Pilih Bulan --</option>
+          <option>Januari</option><option>Februari</option><option>Maret</option><option>April</option><option>Mei</option><option>Juni</option><option>Juli</option><option>Agustus</option><option>September</option><option>Oktober</option><option>November</option><option>Desember</option>
+        </select>
+        <select id="tahun" onchange="muatData()"></select>
       </div>
-      <div class="loading-bar-container">
-        <div class="loading-bar" id="loadingBar"></div>
-      </div>
-    </div>
 
-    <table id="tabelAbsensi">
-      <caption>Laporan Absensi Dukops<span id="judulPeriode"></span></caption>
-      <thead>
-        <tr><th>No</th><th>Desa / Kelurahan</th><th>Laporan</th></tr>
-      </thead>
-      <tbody id="tbody">
-        <tr><td colspan="3" class="text-loading">⏳ Memuat data...</td></tr>
-      </tbody>
-    </table>
+      <!-- LOADING PROGRESS BAR -->
+      <div class="loading-wrapper" id="loadingWrapper">
+        <div class="loading-text-row">
+          <span>⏳ Memuat data...</span>
+          <span id="persenText">0%</span>
+        </div>
+        <div class="loading-bar-container">
+          <div class="loading-bar" id="loadingBar"></div>
+        </div>
+      </div>
+
+      <table id="tabelAbsensi">
+        <thead>
+          <tr><th>No</th><th>Desa / Kelurahan</th><th>Laporan</th></tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="3" class="text-loading">⏳ Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
     
     <div class="actions">
       <button class="btn-download" id="btnDownload" onclick="downloadLaporan()" disabled>📥 Download PNG</button>
@@ -350,7 +350,14 @@
 
     async function downloadLaporan() {
       try {
-        const canvas = await html2canvas(document.getElementById('tabelAbsensi'), { scale: 2, backgroundColor: '#ffffff' });
+        const canvas = await html2canvas(document.getElementById('laporanGambar'), {
+          scale: 2,
+          backgroundColor: '#ffffff',
+          onclone: clonedDocument => {
+            clonedDocument.querySelector('#laporanGambar .filter').style.display = 'none';
+            clonedDocument.getElementById('loadingWrapper').style.display = 'none';
+          }
+        });
         const blob = await new Promise((resolve, reject) => {
           canvas.toBlob((result) => {
             if (result) resolve(result);
