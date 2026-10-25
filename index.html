@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a237e">
+  <meta name="description" content="Laporan absensi ZIP desa dan kelurahan.">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" href="./icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <title>Absensi ZIP Desa</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
@@ -47,6 +52,8 @@
     }
 
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    caption { padding: 0 0 12px; color: #1a237e; font-size: 18px; font-weight: bold; }
+    caption span { display: block; margin-top: 4px; font-size: 14px; }
     th, td { padding: 9px 6px; border-bottom: 1px solid #e0e0e0; text-align: left; }
     th { background: #1a237e; color: #fff; font-size: 12px; }
     
@@ -55,8 +62,26 @@
     
     .total-row td { font-weight: bold; background: #e8eaf6; border-top: 2px solid #1a237e; }
     .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-    .actions button { flex: 1; padding: 13px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; min-width: 140px; }
+    .actions button, .actions a { flex: 1; padding: 13px; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; min-width: 140px; text-align: center; text-decoration: none; }
     .btn-download { background: #2e7d32; }
+    .btn-share { background: #25d366; }
+    .btn-dukops { background: #1a237e; }
+    .btn-install {
+      position: fixed;
+      right: max(20px, env(safe-area-inset-right));
+      bottom: max(20px, env(safe-area-inset-bottom));
+      z-index: 1000;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 999px;
+      background: #ef6c00;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, .3);
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-install[hidden] { display: none; }
     .status { margin-top: 10px; text-align: center; font-size: 13px; color: #555; }
     .text-loading { text-align: center; padding: 20px; color: #666; font-style: italic; }
   </style>
@@ -85,6 +110,7 @@
     </div>
 
     <table id="tabelAbsensi">
+      <caption>Laporan Absensi Dukops<span id="judulPeriode"></span></caption>
       <thead>
         <tr><th>No</th><th>Desa / Kelurahan</th><th>Laporan</th></tr>
       </thead>
@@ -94,17 +120,102 @@
     </table>
     
     <div class="actions">
-      <button class="btn-download" id="btnDownload" onclick="downloadDanShare()" disabled>📥 Download & Share</button>
+      <button class="btn-download" id="btnDownload" onclick="downloadLaporan()" disabled>📥 Download PNG</button>
+      <button class="btn-share" id="btnShare" onclick="shareWhatsApp()" disabled>💬 Share WhatsApp</button>
+      <a class="btn-dukops" href="https://buleleng01.pages.dev/" target="_blank" rel="noopener noreferrer">🌐 APLIKASI DUKOPS01</a>
     </div>
     <div class="status" id="status"></div>
   </div>
+  <button class="btn-install" id="btnInstall" type="button" onclick="installAplikasi()" hidden>📲 Install Aplikasi</button>
   
   <script>
+    let deferredInstallPrompt = null;
+
+    function aplikasiTerpasang() {
+      return window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: fullscreen)').matches
+        || navigator.standalone === true;
+    }
+
+    function perbaruiTombolInstall() {
+      const tombol = document.getElementById('btnInstall');
+      if (tombol) tombol.hidden = aplikasiTerpasang() || !window.isSecureContext || !('serviceWorker' in navigator);
+    }
+
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      perbaruiTombolInstall();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      perbaruiTombolInstall();
+      setStatus('Aplikasi berhasil diinstal.');
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
+    }
+
     // 🔴 URL API BARU ANDA
     const API_URL = 'https://script.google.com/macros/s/AKfycbxylYiKACQTVM2eLImVQXJTIed2YT-keFcHXC_w091CsE_l8K6xsRaeNTEMnf5g0Qrx/exec';
+    const WILAYAH_URL = 'https://raw.githubusercontent.com/lprnbbs2026-hue/BULELENG01/main/data/desa/desa%20dan%20kelurahan.json';
+    const CACHE_NAME = 'absensi-v2';
     let loadingInterval;
 
+    function normalisasiJenis(jenis) {
+      return String(jenis).toLowerCase().includes('kelurahan') || String(jenis).toLowerCase() === 'kel'
+        ? 'Kelurahan'
+        : 'Desa';
+    }
+
+    function kunciWilayah(jenis, nama) {
+      return `${normalisasiJenis(jenis)}:${String(nama).trim().toLocaleLowerCase('id')}`;
+    }
+
+    function setStatus(message, isError = false) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? '#c62828' : '#555';
+    }
+
+    async function installAplikasi() {
+      if (aplikasiTerpasang()) {
+        perbaruiTombolInstall();
+        return;
+      }
+      if (!deferredInstallPrompt) {
+        const perangkatMobile = navigator.userAgentData
+          ? navigator.userAgentData.mobile
+          : /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const petunjuk = perangkatMobile
+          ? 'buka menu browser lalu pilih "Tambahkan ke layar utama" atau "Instal aplikasi"'
+          : 'klik ikon instal di bilah alamat Chrome/Edge, atau buka menu browser lalu pilih "Instal aplikasi"';
+        setStatus(`Untuk memasang, ${petunjuk}.`);
+        return;
+      }
+
+      try {
+        await deferredInstallPrompt.prompt();
+        const pilihan = await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        if (pilihan.outcome === 'accepted') {
+          setStatus('Aplikasi sedang dipasang.');
+        } else {
+          setStatus('Instalasi aplikasi dibatalkan.');
+        }
+      } catch (err) {
+        setStatus(`Gagal memulai instalasi: ${err.message}`, true);
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+      perbaruiTombolInstall();
       const now = new Date();
       const selTahun = document.getElementById('tahun');
       for (let y = now.getFullYear(); y >= 2020; y--) {
@@ -152,68 +263,138 @@
       const bulan = document.getElementById('bulan').value;
       const tahun = document.getElementById('tahun').value;
       if (!bulan) return;
+      document.getElementById('judulPeriode').textContent = `Bulan ${bulan} ${tahun}`;
       
-      document.getElementById('btnDownload').disabled = true;
+      const btnDownload = document.getElementById('btnDownload');
+      const btnShare = document.getElementById('btnShare');
+      btnDownload.disabled = true;
+      btnShare.disabled = true;
+      setStatus('Memuat data...');
       document.getElementById('tbody').innerHTML = '<tr><td colspan="3" class="text-loading">⏳ Memuat data...</td></tr>';
       
       mulaiLoading();
       
       try {
-        const res = await fetch(`${API_URL}?action=getAbsensi&year=${tahun}&month=${bulan}`, { cache: 'no-store' });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error);
+        const [res, wilayahRes] = await Promise.all([
+          fetch(`${API_URL}?action=getAbsensi&year=${tahun}&month=${bulan}`, { cache: 'no-store' }),
+          fetch(WILAYAH_URL)
+        ]);
+        if (!res.ok) throw new Error(`Server absensi merespons ${res.status}`);
+        if (!wilayahRes.ok) throw new Error(`Server data wilayah merespons ${wilayahRes.status}`);
+
+        const [json, daftarWilayah] = await Promise.all([res.json(), wilayahRes.json()]);
+        if (!json.success) throw new Error(json.error || 'Data tidak tersedia');
+        if (!Array.isArray(daftarWilayah)) throw new Error('Format daftar wilayah tidak valid');
         
         const tbody = document.getElementById('tbody');
         tbody.innerHTML = '';
-        const data = json.data || [];
+        const data = Array.isArray(json.data) ? json.data : [];
+        const dataByKey = new Map(data.map(it => [kunciWilayah(it.jenis, it.desa), it]));
+        const wilayah = daftarWilayah.map(namaFile => {
+          const match = /^(Desa|Kelurahan) (.+)\.txt$/i.exec(namaFile);
+          if (!match) throw new Error(`Nama wilayah tidak valid: ${namaFile}`);
+          const jenis = normalisasiJenis(match[1]);
+          const desa = match[2];
+          const laporan = dataByKey.get(kunciWilayah(jenis, desa));
+          dataByKey.delete(kunciWilayah(jenis, desa));
+          return { jenis, desa, jumlahZip: Number(laporan?.jumlahZip) || 0 };
+        });
+
+        dataByKey.forEach((laporan) => {
+          wilayah.push({
+            jenis: normalisasiJenis(laporan.jenis),
+            desa: laporan.desa,
+            jumlahZip: Number(laporan.jumlahZip) || 0
+          });
+        });
         
-        if (!data.length) {
+        if (!wilayah.length) {
           tbody.innerHTML = '<tr><td colspan="3" class="text-loading">Tidak ada data wilayah.</td></tr>';
+          setStatus('Tidak ada data untuk bulan yang dipilih.');
         } else {
-          data.forEach((it, i) => {
+          let total = 0;
+          wilayah.forEach((it, i) => {
+            total += it.jumlahZip;
             const tr = document.createElement('tr');
             const warnaStatus = it.jumlahZip > 0 ? 'lengkap' : 'kosong';
-            tr.innerHTML = `
-              <td>${i+1}</td>
-              <td>${it.jenis === 'Kelurahan' ? 'KEL' : 'DESA'} ${it.desa}</td>
-              <td class="${warnaStatus}"><strong>${it.jumlahZip} Laporan</strong></td>
-            `;
+            const nomor = document.createElement('td');
+            nomor.textContent = i + 1;
+            const namaWilayah = document.createElement('td');
+            namaWilayah.textContent = `${it.jenis === 'Kelurahan' ? 'KEL' : 'DESA'} ${it.desa.toLocaleUpperCase('id')}`;
+            const jumlah = document.createElement('td');
+            jumlah.className = warnaStatus;
+            const jumlahTeks = document.createElement('strong');
+            jumlahTeks.textContent = `${it.jumlahZip} Laporan`;
+            jumlah.appendChild(jumlahTeks);
+            tr.append(nomor, namaWilayah, jumlah);
             tbody.appendChild(tr);
           });
           
           const trTotal = document.createElement('tr');
           trTotal.className = 'total-row';
-          trTotal.innerHTML = `<td colspan="2"><strong>TOTAL (${data.length} wilayah)</strong></td><td><strong>${json.total} Laporan</strong></td>`;
+          trTotal.innerHTML = `<td colspan="2"><strong>TOTAL (${wilayah.length} wilayah)</strong></td><td><strong>${total} Laporan</strong></td>`;
           tbody.appendChild(trTotal);
+          setStatus(`${total} laporan ditemukan untuk ${bulan} ${tahun}.`);
         }
-        document.getElementById('btnDownload').disabled = false;
+        btnDownload.disabled = false;
+        btnShare.disabled = false;
       } catch (err) {
         document.getElementById('tbody').innerHTML = `<tr><td colspan="3" class="text-loading" style="color:red;">Gagal: ${err.message}</td></tr>`;
+        setStatus(`Gagal memuat data: ${err.message}`, true);
+        btnDownload.disabled = true;
+        btnShare.disabled = true;
       } finally {
         selesaiLoading();
       }
     }
 
-    async function downloadDanShare() {
-      const canvas = await html2canvas(document.getElementById('tabelAbsensi'), { scale: 2, backgroundColor: '#ffffff' });
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-      const fileName = `Absensi_${document.getElementById('bulan').value}_${document.getElementById('tahun').value}.png`;
-      
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = fileName;
-      link.click();
-
-      if (navigator.canShare) {
-        const file = new File([blob], fileName, { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          try { 
-            await navigator.share({ files: [file], title: 'Absensi ZIP', text: `Absensi ZIP ${document.getElementById('bulan').value} ${document.getElementById('tahun').value}` }); 
-            return; 
-          } catch(e) {}
-        }
+    async function downloadLaporan() {
+      try {
+        const canvas = await html2canvas(document.getElementById('tabelAbsensi'), { scale: 2, backgroundColor: '#ffffff' });
+        const blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((result) => {
+            if (result) resolve(result);
+            else reject(new Error('Tidak dapat membuat gambar laporan.'));
+          }, 'image/png');
+        });
+        const fileName = `Absensi_${document.getElementById('bulan').value}_${document.getElementById('tahun').value}.png`;
+        
+        const link = document.createElement('a');
+        const imageUrl = URL.createObjectURL(blob);
+        link.href = imageUrl;
+        link.download = fileName;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+        setStatus(`File ${fileName} berhasil disimpan.`);
+      } catch (err) {
+        setStatus(`Gagal membuat file: ${err.message}`, true);
       }
-      window.open('https://wa.me/?text=' + encodeURIComponent(`Absensi ZIP ${fileName}`), '_blank');
+    }
+
+    function shareWhatsApp() {
+      const bulan = document.getElementById('bulan').value;
+      const tahun = document.getElementById('tahun').value;
+      const baris = Array.from(document.querySelectorAll('#tbody tr'))
+        .filter(tr => !tr.classList.contains('total-row'))
+        .map(tr => Array.from(tr.cells, cell => cell.textContent.trim()));
+      const totalBaris = document.querySelector('#tbody .total-row');
+      const total = totalBaris ? totalBaris.cells[1].textContent.trim() : '0 Laporan';
+      const rincian = baris
+        .filter(cells => cells.length === 3 && /^\d+$/.test(cells[0]))
+        .map(cells => `${cells[0]}. ${cells[1]}: ${cells[2]}`);
+      const pemisah = '++++++++++++++++++++++';
+      const pesan = [
+        'Laporan Absensi Dukops',
+        pemisah,
+        `Bulan ${bulan} ${tahun}`,
+        `Total ${total}`,
+        pemisah,
+        '',
+        ...rincian
+      ].join('\n');
+      const url = `https://wa.me/?text=${encodeURIComponent(pesan)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setStatus('Pesan laporan siap dikirim melalui WhatsApp.');
     }
   </script>
 </body>
