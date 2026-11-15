@@ -1,36 +1,134 @@
-const CACHE_NAME = 'absensi-v3';
-const ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
-const OPTIONAL_ASSETS = ['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'];
+// Service Worker — Absensi Dukops
+const CACHE_VERSION = 'absensi-v4';
+const STATIC_CACHE  = `${CACHE_VERSION}-static`;
+const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(c => c.addAll(ASSETS))
-      .then(() => caches.open(CACHE_NAME).then(c => Promise.all(
-        OPTIONAL_ASSETS.map(asset => c.add(asset).catch(err => {
-          console.warn(`Optional asset could not be cached: ${asset}`, err);
-        }))
-      )))
-      .then(() => self.skipWaiting())
-  );
+const PRECACHE_URLS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
+];
+
+const OPTIONAL_PRECACHE_URLS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+];
+
+const NETWORK_ONLY_HOSTS = [
+  'script.google.com',
+  'wa.me',
+  'api.whatsapp.com',
+  'drive.google.com',
+  'docs.google.com',
+  'buleleng01.pages.dev'
+];
+
+// ---------- INSTALL ----------
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(STATIC_CACHE);
+
+    await Promise.all(PRECACHE_URLS.map(url =>
+      cache.add(url).catch(err => console.warn('[SW] Precache gagal:', url, err))
+    ));
+
+    await Promise.all(OPTIONAL_PRECACHE_URLS.map(url =>
+      cache.add(url).catch(err => console.warn('[SW] Optional cache gagal:', url, err))
+    ));
+
+    await self.skipWaiting();
+  })());
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+// ---------- ACTIVATE ----------
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
+      keys
+        .filter(k => k !== STATIC_CACHE && k !== RUNTIME_CACHE)
+        .map(k => caches.delete(k))
+    );
+    await self.clients.claim();
+  })());
 });
 
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET' || e.request.url.includes('script.google.com')) return;
-  e.respondWith(
-    caches.match(e.request).then(c => c || fetch(e.request).then(res => {
-      if (res.status === 200) {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-      }
-      return res;
-    }))
-  );
+// ---------- FETCH ----------
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+
+  let url;
+  try { url = new URL(request.url); } catch { return; }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+  if (NETWORK_ONLY_HOSTS.some(h => url.hostname === h || url.hostname.endsWith('.' + h))) {
+    return; // biarkan browser handle langsung
+  }
+
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  if (url.origin === self.location.origin) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
+
+  event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
 });
+
+// ---------- STRATEGI ----------
+async function networkFirst(request) {
+  const cache = await caches.open(RUNTIME_CACHE);
+  try {
+    const fresh = await fetch(request);
+    if (fresh && fresh.status === 200) cache.put(request, fresh.clone());
+    return fresh;
+  } catch {
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    if (request.mode === 'navigate') {
+      const fallback = await caches.match('./index.html');
+      if (fallback) return fallback;
+    }
+    return new Response('Offline', { status: 503, statusText: 'Offline' });
+  }
+}
+
+async function cacheFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (cached) return cached;
+  try {
+    const fresh = await fetch(request);
+    if (fresh && fresh.status === 200 && fresh.type === 'basic') {
+      cache.put(request, fresh.clone());
+    }
+    return fresh;
+  } catch (err) {
+    const fallback = await caches.match(request);
+    if (fallback) return fallback;
+    throw err;
+  }
+}
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+
+  const networkPromise = fetch(request).then(response => {
+    if (response && response.status === 200 &&
+        (response.type === 'cors' || response.type === 'basic')) {
+      cache.put(request, response.clone());
+    }
+    return response;
+  }).catch(() => null);
+
+  if (cached) return cached;
+  const fresh = await networkPromise;
+  if (fresh) return fresh;
+  return new Response('Offline', { status: 503, statusText: 'Offline' });
+}
