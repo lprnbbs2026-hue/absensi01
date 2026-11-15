@@ -1,11 +1,16 @@
 {
   "name": "Laporan Absensi Dukops",
   "short_name": "Absensi Dukops",
+  "description": "Laporan absensi ZIP desa dan kelurahan di Kabupaten Buleleng.",
+  "lang": "id",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#f0f4f8",
   "theme_color": "#1a237e",
+  "categories": ["productivity", "utilities"],
   "icons": [
     { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
